@@ -1,8 +1,4 @@
-# Cheatsheet UTS Mobile Programming (Android Studio, Java)
 
-> Waktu cuma 2 jam, yang penting jalan dulu, baru rapihin.
-> Urutan materi = urutan di PDF Notes (yang paling sering keluar): **Folder → Layout → View → Methods → Intent → Menu → RecyclerView**.
-> Contoh kode diambil dari latihan: `sportshop`, `Elektronik`, `restoran`, `Sesi6`.
 
 ## Daftar Isi
 
