@@ -1,8 +1,8 @@
 
-
 ## Daftar Isi
 
 0. [Alur Ngerjain Ujian](#0-alur-ngerjain-ujian)
+0.5. [Template Utama (copy lalu ganti nama)](#05-template-utama-copy-lalu-ganti-nama)
 1. [Folder & Cara Bikin File](#1-folder--cara-bikin-file)
 2. [Template Activity](#2-template-activity-jangan-dihapus)
 3. [Layout](#3-layout)
@@ -30,11 +30,104 @@
 
 **Checklist sebelum submit:**
 
+- [ ] `themes.xml` parent = `Theme.Material3.DayNight.NoActionBar` (kalau pakai Toolbar)
 - [ ] Semua Activity baru sudah terdaftar di `AndroidManifest.xml`
 - [ ] Root layout tiap activity punya `android:id="@+id/main"`
 - [ ] Semua `Toast` ada `.show()`
 - [ ] RecyclerView sudah `setLayoutManager` **dan** `setAdapter`
 - [ ] Nama gambar huruf kecil semua, tanpa spasi
+
+**Kapan bikin Activity baru?**
+Soal bilang "halaman baru", "pindah halaman", "tombol kembali" → **Activity baru**.
+Soal cuma bilang "tampilkan" / "muncul" → cukup **ganti isi di halaman yang sama** (misal `setAdapter` list lain).
+
+---
+
+## 0.5. Template Utama (copy lalu ganti nama)
+
+Pola paling sering: **menu + submenu + list ganti di halaman yang sama + Profile di Activity terpisah**.
+Kalau list harus di halaman terpisah → pakai [Variasi C](#variasi-c--kategori-beda-pakai-1-activity-dari-menu-kirim-key).
+File pendukung (`Produk`, `ProdukViewHolder`, `ProdukAdapter`, `item_produk.xml`, `menu_main.xml`) ada di bagian 7 & 8.
+
+### activity_main.xml (Toolbar + RecyclerView)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/navMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvProduk"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>
+```
+
+### MainActivity.java (Toolbar + Menu + RecyclerView)
+
+```java
+public class MainActivity extends AppCompatActivity {
+
+    Toolbar navMenu;
+    RecyclerView rvProduk;
+    ArrayList<Produk> dataA = new ArrayList<>();   // field: biar bisa dipakai di onOptionsItemSelected
+    ArrayList<Produk> dataB = new ArrayList<>();
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
+        navMenu = findViewById(R.id.navMenu);
+        setSupportActionBar(navMenu);
+
+        dataA.add(new Produk(R.drawable.a1, "Nama A1", "Rp 100.000", "Deskripsi"));
+        dataB.add(new Produk(R.drawable.b1, "Nama B1", "Rp 200.000", "Deskripsi"));
+
+        rvProduk = findViewById(R.id.rvProduk);
+        rvProduk.setLayoutManager(new LinearLayoutManager(this));
+        rvProduk.setAdapter(new ProdukAdapter(this, dataA));   // halaman awal
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.navProfile) {
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        } else if (id == R.id.navA) {
+            rvProduk.setAdapter(new ProdukAdapter(this, dataA));
+            return true;
+        } else if (id == R.id.navB) {
+            rvProduk.setAdapter(new ProdukAdapter(this, dataB));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+}
+```
 
 ---
 
@@ -411,7 +504,8 @@ LinearLayout:
 <androidx.appcompat.widget.Toolbar
     android:id="@+id/navMenu"
     android:layout_width="match_parent"
-    android:layout_height="?attr/actionBarSize" />
+    android:layout_height="?attr/actionBarSize"
+    android:background="?attr/colorPrimary" />
 ```
 
 ConstraintLayout:
@@ -719,6 +813,8 @@ if (category.equals("Shoes")) {
 
 ### Variasi D — Ganti kategori di halaman yang sama (cukup ganti adapter)
 
+> `rvProduk` dan list data harus jadi **field (di atas onCreate)**, diisi di `onCreate`. Kalau dideklarasi di dalam `onCreate`, gak bisa dipakai di `onOptionsItemSelected`.
+
 ```java
 ArrayList<Produk> dataLaptop = new ArrayList<>();   // di atas onCreate
 ArrayList<Produk> dataMouse  = new ArrayList<>();
@@ -962,6 +1058,10 @@ btnBalas.setOnClickListener(v -> {
 | Data intent `null` | Key beda (huruf besar-kecil) | Key `putExtra` = key `getStringExtra` |
 | `R` merah semua | Ada error di file XML / nama gambar salah | Cek XML yang merah, rename gambar huruf kecil, lalu **Build → Rebuild Project** |
 | Nama gambar error | Ada spasi / huruf besar / diawali angka | Rename: `sepatu1.jpg` |
+| `The markup in the document following the root element must be well-formed` | Tag yang punya isi ditutup pakai `/>`, atau ada `</Tag>` kelebihan | Tag ber-isi → `>` ... `</Tag>`; tag tanpa isi → `/>` |
+| `app:` merah (`cardCornerRadius`, `layout_constraint...`) | Root layout belum ada `xmlns:app` | Tambah `xmlns:app="http://schemas.android.com/apk/res-auto"` di root |
+| `RecyclerView` merah di XML | Dependency belum ada | `build.gradle.kts (app)` → `implementation("androidx.recyclerview:recyclerview:1.4.0")` → Sync Now |
+| Class merah gara-gara `}` | Kurung kelebihan / kurang | `Ctrl+Alt+L`, cek pasangan `{ }` |
 
 ---
 
@@ -1013,3 +1113,6 @@ import java.util.ArrayList;
 | `Ctrl + Alt + L` | Rapihin kode |
 | `Shift + F10` | Run app |
 | `Ctrl + /` | Comment / uncomment |
+| `Ctrl + D` | Duplikat baris |
+| `Toast` + Tab | Template Toast otomatis |
+| `xxx.var` + Tab | Bikin variabel otomatis (misal `dataProduk.get(position).var`) |
